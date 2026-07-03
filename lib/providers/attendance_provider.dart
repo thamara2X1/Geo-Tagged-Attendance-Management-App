@@ -24,7 +24,7 @@ class AttendanceState {
       records: records ?? this.records,
       isLoading: isLoading ?? this.isLoading,
       errorMessage:
-          errorMessage, // intentionally not preserved: clears on each update
+          errorMessage,
     );
   }
 
