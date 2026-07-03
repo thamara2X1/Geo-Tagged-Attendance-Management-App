@@ -46,8 +46,8 @@ never accesses the location service directly.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/vininduthamara/geo_attendance_app.git
-cd geo_attendance_app
+git clone https://github.com/thamara2X1/Geo-Tagged-Attendance-Management-App.git
+cd Geo-Tagged-Attendance-Management-App
 
 # 2. Install dependencies
 flutter pub get
