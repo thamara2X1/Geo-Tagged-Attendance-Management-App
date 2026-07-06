@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-
-import '../models/attendance_model.dart';
+import '../models/attendance_record.dart';
+import '../models/attendance_type.dart';
 import '../utils/date_formatter.dart';
 
-/// One row in the Attendance History list.
 class AttendanceListTile extends StatelessWidget {
   final AttendanceRecord record;
   final VoidCallback onTap;
@@ -17,36 +16,27 @@ class AttendanceListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isCheckIn = record.type == AttendanceType.checkIn;
-
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: ListTile(
-        onTap: onTap,
         leading: CircleAvatar(
           backgroundColor:
               isCheckIn ? Colors.green.shade100 : Colors.orange.shade100,
           child: Icon(
             isCheckIn ? Icons.login : Icons.logout,
-            color: isCheckIn ? Colors.green : Colors.orange,
+            color: isCheckIn ? Colors.green.shade700 : Colors.orange.shade700,
           ),
         ),
-        title: Text(record.type.label,
-            style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(DateFormatterUtil.formatDateTime(record.dateTime)),
-            const SizedBox(height: 2),
-            Text(
-              '${record.latitude.toStringAsFixed(6)}, '
-              '${record.longitude.toStringAsFixed(6)}',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-          ],
+        title: Text(record.type.label),
+        subtitle: Text(DateFormatter.dateTime(record.dateTime)),
+        trailing: Text(
+          '${record.latitude.toStringAsFixed(4)},\n'
+          '${record.longitude.toStringAsFixed(4)}',
+          textAlign: TextAlign.right,
+          style: Theme.of(context).textTheme.bodySmall,
         ),
-        isThreeLine: true,
-        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
       ),
     );
   }

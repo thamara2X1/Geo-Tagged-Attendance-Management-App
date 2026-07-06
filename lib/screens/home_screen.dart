@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import '../providers/attendance_provider.dart';
-import '../utils/constants.dart';
-import '../widgets/attendance_action_button.dart';
+import '../providers/attendance_status_provider.dart';
+import '../providers/clock_provider.dart';
+import '../utils/app_constants.dart';
 import '../widgets/attendance_status_card.dart';
 import 'history_screen.dart';
 
@@ -13,25 +13,31 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final attendanceState = ref.watch(attendanceProvider);
-    final notifier = ref.read(attendanceProvider.notifier);
-    final isCheckedIn = attendanceState.isCheckedIn;
+    final isCheckedIn = ref.watch(isCheckedInProvider);
+    final clock = ref.watch(clockProvider).value ?? DateTime.now();
+    final isLoading = attendanceState.isLoading;
 
+    // Surface errors as a SnackBar (side-effect, not a rebuild).
     ref.listen(attendanceProvider, (previous, next) {
-      if (next.errorMessage != null &&
-          next.errorMessage != previous?.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage!)),
-        );
+      if (next.hasError && !next.isLoading) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(next.error.toString()),
+              backgroundColor: Colors.red.shade600,
+            ),
+          );
       }
     });
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(AppConstants.appTitle),
+        title: const Text('Attendance'),
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
-            tooltip: 'Attendance History',
+            tooltip: 'History',
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const HistoryScreen()),
             ),
@@ -39,41 +45,41 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const CircleAvatar(
-              radius: 36,
-              child: Icon(Icons.person, size: 36),
+            AttendanceStatusCard(
+              employeeName: AppConstants.employeeName,
+              now: clock,
+              isCheckedIn: isCheckedIn,
+            ),
+            const Spacer(),
+            if (isLoading)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            FilledButton.icon(
+              onPressed: (isLoading || isCheckedIn)
+                  ? null
+                  : () => ref.read(attendanceProvider.notifier).checkIn(),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              icon: const Icon(Icons.login),
+              label: const Text('Check In'),
             ),
             const SizedBox(height: 12),
-            const Text(
-              AppConstants.employeeName,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 24),
-            AttendanceStatusCard(
-              isCheckedIn: isCheckedIn,
-              hasRecords: attendanceState.records.isNotEmpty,
-              currentDateTime: DateTime.now(),
-            ),
-            const SizedBox(height: 32),
-            AttendanceActionButton(
-              label: 'Check In',
-              color: Colors.green,
-              isEnabled: !isCheckedIn,
-              isLoading: attendanceState.isLoading,
-              onPressed: notifier.checkIn,
-            ),
-            const SizedBox(height: 16),
-            AttendanceActionButton(
-              label: 'Check Out',
-              color: Colors.redAccent,
-              isEnabled: isCheckedIn,
-              isLoading: attendanceState.isLoading,
-              onPressed: notifier.checkOut,
+            OutlinedButton.icon(
+              onPressed: (isLoading || !isCheckedIn)
+                  ? null
+                  : () => ref.read(attendanceProvider.notifier).checkOut(),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              icon: const Icon(Icons.logout),
+              label: const Text('Check Out'),
             ),
           ],
         ),

@@ -1,62 +1,50 @@
 import 'package:flutter/material.dart';
+import '../utils/date_formatter.dart';
 
-/// Small display-only card showing current attendance status.
 class AttendanceStatusCard extends StatelessWidget {
+  final String employeeName;
+  final DateTime now;
   final bool isCheckedIn;
-  final bool hasRecords;
-  final DateTime currentDateTime;
 
   const AttendanceStatusCard({
     super.key,
+    required this.employeeName,
+    required this.now,
     required this.isCheckedIn,
-    required this.hasRecords,
-    required this.currentDateTime,
   });
 
   @override
   Widget build(BuildContext context) {
-    final String statusText;
-    final Color statusColor;
-
-    if (!hasRecords) {
-      statusText = 'Not Marked Yet';
-      statusColor = Colors.grey;
-    } else if (isCheckedIn) {
-      statusText = 'Checked In';
-      statusColor = Colors.green;
-    } else {
-      statusText = 'Checked Out';
-      statusColor = Colors.orange;
-    }
-
+    final theme = Theme.of(context);
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(employeeName, style: theme.textTheme.titleLarge),
+            const SizedBox(height: 4),
+            Text(DateFormatter.date(now), style: theme.textTheme.bodyMedium),
+            Text(DateFormatter.time(now), style: theme.textTheme.headlineSmall),
+            const SizedBox(height: 16),
             Row(
               children: [
-                Icon(Icons.circle, size: 12, color: statusColor),
+                Icon(
+                  isCheckedIn ? Icons.check_circle : Icons.cancel,
+                  color: isCheckedIn ? Colors.green : Colors.grey,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  statusText,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
+                  isCheckedIn ? 'Checked In' : 'Checked Out',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: isCheckedIn ? Colors.green : Colors.grey.shade700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              '${currentDateTime.day}/${currentDateTime.month}/${currentDateTime.year}  '
-              '${currentDateTime.hour.toString().padLeft(2, '0')}:'
-              '${currentDateTime.minute.toString().padLeft(2, '0')}',
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],
         ),

@@ -1,35 +1,41 @@
-import 'dart:math';
-
-class LocationResult {
-  final double latitude;
-  final double longitude;
-
-  const LocationResult({required this.latitude, required this.longitude});
-}
+import 'package:geolocator/geolocator.dart';
+import 'location_exception.dart';
 
 abstract class LocationService {
-  Future<LocationResult> getCurrentLocation();
+  Future<Position> getCurrentLocation();
 }
 
-/// Mock implementation.
-
-class MockLocationService implements LocationService {
-  static const double _baseLatitude = 6.9271;
-  static const double _baseLongitude = 79.8612;
-
-  final Random _random = Random();
-
+/// Real implementation backed by the device GPS via geolocator.
+class GeolocatorLocationService implements LocationService {
   @override
-  Future<LocationResult> getCurrentLocation() async {
-    // Simulate the small delay a real GPS fix would take.
-    await Future.delayed(const Duration(milliseconds: 800));
+  Future<Position> getCurrentLocation() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw const LocationException(
+        'Location services are disabled. Please enable GPS.',
+      );
+    }
 
-    final jitterLat = (_random.nextDouble() - 0.5) * 0.01;
-    final jitterLng = (_random.nextDouble() - 0.5) * 0.01;
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw const LocationException('Location permission was denied.');
+      }
+    }
 
-    return LocationResult(
-      latitude: _baseLatitude + jitterLat,
-      longitude: _baseLongitude + jitterLng,
+    if (permission == LocationPermission.deniedForever) {
+      throw const LocationException(
+        'Location permission is permanently denied. '
+        'Please enable it from app settings.',
+      );
+    }
+
+    return Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        timeLimit: Duration(seconds: 15),
+      ),
     );
   }
 }
