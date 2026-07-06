@@ -1,25 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'screens/home_screen.dart';
-import 'utils/constants.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(const ProviderScope(child: AttendanceApp()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class AttendanceApp extends StatelessWidget {
+  const AttendanceApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: AppConstants.appTitle,
+      title: 'Geo Attendance',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.indigo,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
       home: const HomeScreen(),
     );
   }
