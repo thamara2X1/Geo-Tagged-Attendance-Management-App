@@ -6,7 +6,7 @@ and type (check in / check out). Built for the Era Biz Flutter intern assessment
 
 ## Features
 
-- Home screen with employee name, current date & time, and attendance status
+- Home screen with employee name, live date & time, and attendance status
 - Check In / Check Out with geo-tagged location capture
 - Attendance history showing all records (type, date, time, GPS coordinates)
 - Attendance details screen for a selected record
@@ -16,7 +16,7 @@ and type (check in / check out). Built for the Era Biz Flutter intern assessment
 
 - Flutter (stable)
 - Riverpod (`flutter_riverpod`) for state management
-- `geolocator` for real device GPS
+- `geolocator` for device GPS
 - `intl` for date/time formatting
 - `uuid` for unique record IDs
 
@@ -25,21 +25,31 @@ and type (check in / check out). Built for the Era Biz Flutter intern assessment
 ```
 lib/
 ├── models/       # AttendanceRecord and AttendanceType
-├── services/     # Location service (mock + real geolocator)
-├── providers/    # Riverpod state and notifier
+├── services/     # LocationService abstraction (real geolocator + mock)
+├── providers/    # Riverpod providers and AsyncNotifier
 ├── screens/      # Home, History, Details
 ├── widgets/      # Reusable UI components
 ├── utils/        # Constants and date formatter
 └── main.dart
 ```
 
-The UI reads state from the Riverpod provider and calls actions on the notifier.
-The notifier holds all business logic and talks to the location service. The UI
-never accesses the location service directly.
+The UI reads state from Riverpod providers and calls actions on the notifier.
+The notifier holds the business logic and talks to the location service through
+an abstract `LocationService` contract. The UI never accesses the location
+service or GPS APIs directly.
+
+## Error Handling
+
+GPS failures — location services disabled, permission denied, permission
+permanently denied, and capture timeout — are thrown as typed
+`LocationException`s from the service layer. The attendance notifier wraps
+location capture in `AsyncValue.guard()`, so every failure becomes an explicit
+error state that the UI surfaces to the user, while previously captured
+records are preserved.
 
 ## Requirements
 
-- Flutter SDK 3.19.0 or higher (Dart >= 3.3.0)
+- Flutter 3.24 or higher (Dart SDK >= 3.5.0)
 - An Android emulator, iOS simulator, or physical device
 
 ## Setup
@@ -56,24 +66,39 @@ flutter pub get
 flutter run
 ```
 
-## Assumptions
+## Location Source (Real GPS vs Mock)
 
-- **Location source:** A `MockLocationService` is active by default, returning a
-  jittered coordinate near Colombo, Sri Lanka. This keeps demos reliable since
-  emulator GPS can be inconsistent.
-- **Persistence:** Records are held in memory and reset when the app closes. The
-  model includes `toJson` / `fromJson` so persistence (e.g. SharedPreferences)
-  can be added without changing other layers. No backend is used, per the task.
-- **Check in / out logic:** The current status is derived from the most recent
-  record. On first launch, before any record exists, the status shows
-  "Not Marked Yet".
-- **Employee:** A single hard-coded employee is used, as the task does not
-  require authentication or multiple users.
+`GeolocatorLocationService` (real device GPS) is active by default.
 
-## Real GPS Permissions
+The assessment allows mock GPS data, so a `MockLocationService` is included
+for emulators or devices without reliable GPS. It returns a slightly jittered
+coordinate near Colombo, Sri Lanka. To use it, open
+`lib/providers/location_service_provider.dart` and swap:
 
-If switching to `GeolocatorLocationService`, the following are already set up:
+```dart
+final locationServiceProvider = Provider<LocationService>((ref) {
+  return GeolocatorLocationService(); // real GPS (default)
+  // return MockLocationService();    // mock coordinates for emulators
+});
+```
+
+Because both implement the same `LocationService` contract, no other code
+changes are needed.
+
+## Permissions (already configured)
 
 - Android: `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION` in
   `AndroidManifest.xml`
-- iOS: `NSLocationWhenInUseUsageDescription` in `Info.plist`
+
+## Assumptions
+
+- **Persistence:** Records are held in memory and reset when the app closes.
+  No backend or local database is used, per the task notes. The layered
+  structure means persistence (e.g. SharedPreferences or a local DB) could be
+  added later without changing the UI or provider layers.
+- **Check in / out logic:** The current status is derived from the most recent
+  record. Before any record exists, the status defaults to "Checked Out", and
+  only the Check In button is enabled.
+- **Employee:** A single hard-coded employee name is used, as the task does
+  not require authentication or multiple users.
+- **Record order:** Attendance history shows the newest records first.
